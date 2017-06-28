@@ -1,4 +1,4 @@
-package ds
+package util
 
 type BasicArray interface {
 	Get(i int) int

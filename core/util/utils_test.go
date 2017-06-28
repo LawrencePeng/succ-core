@@ -1,4 +1,4 @@
-package bits
+package util
 
 import "testing"
 import (

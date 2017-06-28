@@ -15,9 +15,28 @@ type SuccinctFile interface {
 	CharAt(i int64) byte
 	ExtractWith(offset int64, len int, ctc *ExtractContext) string
 	Extract(offset int64, len int) string
-	ExtractUtil(offset int64, delim int) string
+	ExtractUntil(offset int64, delim int) string
 	ExtractUntilWith(offset int64, delim int, ctx *ExtractContext) string
-
+	ExtractBytes(offset int64, len int, ctx ExtractContext) []byte
+	ExtractBytesUntil(offset int64, delim int) []byte
+	ExtractBytesUntilWith(ctx ExtractContext, delim int) []byte
+	ExtractShortWith(offset int, ctx ExtractContext) int16
+	ExtractShort(offset int) int16
+	ExtractShortWithOffset(offset int) int16
+	ExtractShortWithCtx(ctx ExtractContext) int16
+	ExtractIntWith(offset int, ctx ExtractContext) int
+	ExtractInt(offset int) int
+	ExtractIntWithOffset(offset int) int
+	ExtractIntWithCtx(ctx ExtractContext) int
+	ExtractLongWith(offset int, ctx ExtractContext) int64
+	ExtractLong(offset int) int64
+	ExtractLongWithOffset(offset int) int64
+	ExtractLongWithCtx(ctx ExtractContext) int64
+	RangeSearch(buf1, buf2 []byte) Range
+	RangeSearchWithSource(s1, s2 Source) Range
+	BwdSearch(buf []byte) Range
+	BwdSearchWithSource(s Source) Range
+	
 }
 
 type SuccinctIndexedFile interface {

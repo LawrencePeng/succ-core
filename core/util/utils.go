@@ -1,4 +1,4 @@
-package bits
+package util
 
 const (
 	ALL_SET = 0xFFFFFFFFFFFFFFFF
