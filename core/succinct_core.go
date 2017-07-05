@@ -2,6 +2,7 @@ package core
 
 import (
 	"sort"
+	"unsafe"
 )
 
 type Succinct interface {
@@ -27,4 +28,10 @@ type SuccinctCore struct {
 
 func (sc *SuccinctCore) FindCharacter(c int) int {
 	return sort.SearchInts(sc.Alphabet[1:], c)
+}
+
+var INT_SIZE = int(unsafe.Sizeof(int(0)))
+
+func (sc *SuccinctCore) BaseSize() int {
+	return 6*INT_SIZE + (12 + len(sc.Alphabet)*INT_SIZE)
 }

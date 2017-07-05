@@ -1,6 +1,6 @@
 package util
 
-const two32 = int64(1 << 32)
+const Two32 = int64(1 << 32)
 
 
 func IntLog2(n int64) int {

@@ -36,7 +36,22 @@ type SuccinctFile interface {
 	RangeSearchWithSource(s1, s2 Source) Range
 	BwdSearch(buf []byte) Range
 	BwdSearchWithSource(s Source) Range
-	
+	ContinueBwdSearch(buf []byte, r Range) Range
+	ContinueBwdSearchWithSource(source Source, r Range) Range
+	Compare(buf []byte, i int) int
+	CompareWithSource(s Source, i int) int
+	CompareWithOffset(buf []byte, i int, offset int) int
+	CompareWithSourceAndOffSet(s Source, i int, offset int) int
+	FwdSearch(buf []byte) Range
+	FwdSearchWithSource(s Source) Range
+	ContinueFwdSearch(buf []byte, r Range) Range
+	ContinueFwdSearchWithSource(source Source, r Range) Range
+	Count(q []byte) int64
+	CountWithSource(s Source) int64
+	SuccinctIndexOffsets(r Range) []int64
+	Search(query []byte) []int64
+	SearchWithSource(s Source) []int64
+	SameRecord(fir, sec int64) bool
 }
 
 type SuccinctIndexedFile interface {
@@ -44,7 +59,7 @@ type SuccinctIndexedFile interface {
 	OffsetToRecordId(pos int) int
 	GetNumRecords() int
 	GetRecordOffset(recordId int) int
-	GetRecordByBytes(recordId int) []byte
+	GetRecordBytes(recordId int) []byte
 	ExtractRecordBytes(recordId int, offset int, len int) []byte
 	GetRecord(recordId int) string
 	ExtractRecord(recordId int, offset int, length int) string
