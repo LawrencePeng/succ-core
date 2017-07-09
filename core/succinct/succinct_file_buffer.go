@@ -1,5 +1,5 @@
 package succinct
 
 type SuccinctFileBuffer struct {
-	SuccinctBuffer
+	succBuf *SuccinctBuffer
 }

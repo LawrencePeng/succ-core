@@ -9,28 +9,28 @@ type ExtractContext struct {
 }
 
 type SuccinctFile interface {
-	GetAlphabet() []int
-	GetSize() int
-	GetCompressedSize() int
+	GetAlphabet() []int32
+	GetSize() int32
+	GetCompressedSize() int32
 	CharAt(i int64) byte
-	ExtractWith(offset int64, len int, ctc *ExtractContext) string
-	Extract(offset int64, len int) string
-	ExtractUntil(offset int64, delim int) string
-	ExtractUntilWith(offset int64, delim int, ctx *ExtractContext) string
-	ExtractBytes(offset int64, len int, ctx ExtractContext) []byte
-	ExtractBytesUntil(offset int64, delim int) []byte
-	ExtractBytesUntilWith(ctx ExtractContext, delim int) []byte
-	ExtractShortWith(offset int, ctx ExtractContext) int16
-	ExtractShort(offset int) int16
-	ExtractShortWithOffset(offset int) int16
+	ExtractWith(offset int64, len int32, ctc *ExtractContext) string
+	Extract(offset int64, len int32) string
+	ExtractUntil(offset int64, delim int32) string
+	ExtractUntilWith(offset int64, delim int32, ctx *ExtractContext) string
+	ExtractBytes(offset int64, len int32, ctx ExtractContext) []byte
+	ExtractBytesUntil(offset int64, delim int32) []byte
+	ExtractBytesUntilWith(ctx ExtractContext, delim int32) []byte
+	ExtractShortWith(offset int32, ctx ExtractContext) int16
+	ExtractShort(offset int32) int16
+	ExtractShortWithOffset(offset int32) int16
 	ExtractShortWithCtx(ctx ExtractContext) int16
-	ExtractIntWith(offset int, ctx ExtractContext) int
-	ExtractInt(offset int) int
-	ExtractIntWithOffset(offset int) int
-	ExtractIntWithCtx(ctx ExtractContext) int
+	ExtractIntWith(offset int32, ctx ExtractContext) int32
+	ExtractInt(offset int32) int32
+	ExtractIntWithOffset(offset int32) int32
+	ExtractIntWithCtx(ctx ExtractContext) int32
 	ExtractLongWith(offset int, ctx ExtractContext) int64
-	ExtractLong(offset int) int64
-	ExtractLongWithOffset(offset int) int64
+	ExtractLong(offset int32) int64
+	ExtractLongWithOffset(offset int32) int64
 	ExtractLongWithCtx(ctx ExtractContext) int64
 	RangeSearch(buf1, buf2 []byte) Range
 	RangeSearchWithSource(s1, s2 Source) Range
@@ -38,10 +38,10 @@ type SuccinctFile interface {
 	BwdSearchWithSource(s Source) Range
 	ContinueBwdSearch(buf []byte, r Range) Range
 	ContinueBwdSearchWithSource(source Source, r Range) Range
-	Compare(buf []byte, i int) int
-	CompareWithSource(s Source, i int) int
-	CompareWithOffset(buf []byte, i int, offset int) int
-	CompareWithSourceAndOffSet(s Source, i int, offset int) int
+	Compare(buf []byte, i int32) int32
+	CompareWithSource(s Source, i int32) int32
+	CompareWithOffset(buf []byte, i int32, offset int32) int32
+	CompareWithSourceAndOffSet(s Source, i int32, offset int32) int32
 	FwdSearch(buf []byte) Range
 	FwdSearchWithSource(s Source) Range
 	ContinueFwdSearch(buf []byte, r Range) Range
@@ -56,13 +56,13 @@ type SuccinctFile interface {
 
 type SuccinctIndexedFile interface {
 	SuccinctFile
-	OffsetToRecordId(pos int) int
-	GetNumRecords() int
-	GetRecordOffset(recordId int) int
-	GetRecordBytes(recordId int) []byte
-	ExtractRecordBytes(recordId int, offset int, len int) []byte
-	GetRecord(recordId int) string
-	ExtractRecord(recordId int, offset int, length int) string
-	RecordSearchIds(query Source) []int
-	RecordSearchIdsByByteArr(query []byte) []int
+	OffsetToRecordId(pos int32) int32
+	GetNumRecords() int32
+	GetRecordOffset(recordId int32) int32
+	GetRecordBytes(recordId int32) []byte
+	ExtractRecordBytes(recordId int32, offset int32, len int32) []byte
+	GetRecord(recordId int32) string
+	ExtractRecord(recordId int32, offset int32, length int32) string
+	RecordSearchIds(query Source) []int32
+	RecordSearchIdsByByteArr(query []byte) []int32
 }

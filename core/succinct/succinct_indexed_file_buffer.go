@@ -3,7 +3,7 @@ package succinct
 import "./util"
 
 type SuccinctIndexedFileBuffer struct {
-	sfb SuccinctFileBuffer
+	sfb *SuccinctFileBuffer
 	sa		[]int64
 	isa		[]int64
 	colOffset []int

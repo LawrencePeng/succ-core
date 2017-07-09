@@ -1,6 +1,6 @@
 package util
 
 type IntArray struct {
-	buf   *[]int
-	m_pos int
+	buf   *[]int32
+	m_pos int32
 }
