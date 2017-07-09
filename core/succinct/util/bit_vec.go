@@ -20,7 +20,7 @@ func CopyBitVector(ano *BitVector) *BitVector {
 	return bv
 }
 
-func ReadBitVectorFromBuf(buf bytes.Buffer) *BitVector {
+func ReadBitVectorFromBuf(buf *bytes.Buffer) *BitVector {
 	numOfBlock := ReadInt(buf)
 
 	if numOfBlock == 0 {
@@ -37,7 +37,7 @@ func ReadBitVectorFromBuf(buf bytes.Buffer) *BitVector {
 	}
 }
 
-func (bv *BitVector) WriteToBuf(buf bytes.Buffer) {
+func (bv *BitVector) WriteToBuf(buf *bytes.Buffer) {
 	WriteInt(buf, int32(len(bv.Data)))
 	for _, n := range bv.Data {
 		WriteLong(buf, n)

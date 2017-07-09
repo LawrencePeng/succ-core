@@ -59,7 +59,7 @@ func (iv *IntVector) SerializedSize() int32 {
 	return int32(INT_SIZE) + iv.Bv.SerializedSize()
 }
 
-func (iv *IntVector) WriteToBuf(buf bytes.Buffer) {
+func (iv *IntVector) WriteToBuf(buf *bytes.Buffer) {
 	WriteInt(buf, iv.BitWidth)
 	iv.Bv.WriteToBuf(buf)
 }
