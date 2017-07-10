@@ -19,10 +19,11 @@ type SuccinctCore struct {
 	OriginalSize     int32
 	SamplingRateSA   int32
 	SamplingRateISA  int32
-	SamplingRateNSA  int32
+	SamplingRateNPA  int32
 	SamplingBitWidth int32
 }
 
-func (sc *SuccinctCore) BaseSize() int {
-	return 6 * util.INT_SIZE + (12 + len(sc.Alphabet)*util.INT_SIZE)
+func (sc *SuccinctCore) BaseSize() int32 {
+	return 6 * int32(util.INT_SIZE) + (12 + int32(len(sc.Alphabet)*util.INT_SIZE))
 }
+

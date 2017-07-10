@@ -21,6 +21,14 @@ func NewDeltaIntVector(elements []int32 , samplingRate int32) *DeltaIntVector {
 	return div
 }
 
+func NewDeltaIntVectorFull(data []int32, startOffset ,length, samplingRate int32) *DeltaIntVector {
+	div := &DeltaIntVector{
+		SamplingRate:samplingRate,
+	}
+	div.encode(data, startOffset, length)
+	return div
+}
+
 func (div *DeltaIntVector) encode(elements []int32, startingOffset int32, length int32) {
 	if length == 0 {
 		return
@@ -242,6 +250,16 @@ func ToLongSlice(bts []byte) []int64 {
 	ret := make([]int64, size)
 	for i := 0; i <= size; i++ {
 		ret[i] = int64(binary.BigEndian.Uint64(bts[LONG_SIZE * i : LONG_SIZE * i + LONG_SIZE]))
+	}
+	return ret
+}
+
+func ToIntSlice(bts []byte) []int32 {
+	length := len(bts)
+	size := length / LONG_SIZE
+	ret := make([]int32, size)
+	for i := 0; i <= size; i++ {
+		ret[i] = int32(binary.BigEndian.Uint32(bts[LONG_SIZE * i : INT_SIZE * i + INT_SIZE]))
 	}
 	return ret
 }
