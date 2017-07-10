@@ -68,3 +68,61 @@ func (succFBuf *SuccinctFileBuffer) ExtractWith(offset int64, len int32, ctx *Ex
 	return string(buf.Bytes())
 }
 
+func (succFBuf *SuccinctFileBuffer) Extract(offset int64, len int32) string {
+	return succFBuf.ExtractWith(offset, len, nil)
+}
+
+func (succFBuf *SuccinctFileBuffer) ExtractUntilWith(offset int64, delim int32, ctx *ExtractContext) string {
+	buf := new(bytes.Buffer)
+
+	s := succFBuf.SuccBuf.LookUpISA(offset)
+
+	var nextCh int32
+	nextCh = succFBuf.SuccBuf.LookUpC(s)
+	if nextCh == delim || nextCh == int32(util.EOF) {
+		if ctx == nil {
+			ctx.Marker = s
+		}
+		return string(buf.Bytes())
+	}
+	buf.WriteByte(byte(nextCh))
+	s = succFBuf.SuccBuf.LookUpNPA(s)
+
+	for ;; {
+		nextCh = succFBuf.SuccBuf.LookUpC(s)
+		if nextCh == delim || nextCh == int32(util.EOF) {
+			break
+		}
+		buf.WriteByte(byte(nextCh))
+		s = succFBuf.SuccBuf.LookUpNPA(s)
+	}
+	if ctx == nil {
+		ctx.Marker = s
+	}
+	return string(buf.Bytes())
+}
+
+func (succFBuf *SuccinctFileBuffer)  ExtractUntil(offset int64, delim int32) string {
+	return succFBuf.ExtractUntilWith(offset, delim, nil)
+}
+
+func (succFBuf *SuccinctFileBuffer) ExtractBytesWith(offset int64, len int32, ctx *ExtractContext) []byte {
+	buf := new(bytes.Buffer)
+	s := succFBuf.SuccBuf.LookUpISA(offset)
+	for k := int32(0); k < len && int32(offset) + k < succFBuf.Size(); k++ {
+		nextCh := succFBuf.SuccBuf.LookUpC(s)
+		buf.WriteByte(byte(nextCh))
+		s = succFBuf.SuccBuf.LookUpNPA(s)
+	}
+
+	if ctx != nil {
+		ctx.Marker = s
+	}
+
+	return buf.Bytes()
+}
+
+func (succFBuf *SuccinctFileBuffer) ExtractBytes(offset int64, len int32) []byte {
+	return succFBuf.ExtractBytesWith(offset, len, nil)
+}
+
