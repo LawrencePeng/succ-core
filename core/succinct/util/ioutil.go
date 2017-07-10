@@ -37,6 +37,10 @@ func WriteLong(buf *bytes.Buffer, v int64) {
 	binary.Write(buf, binary.BigEndian, v)
 }
 
+func WriteByte(buf *bytes.Buffer, v byte)  {
+
+}
+
 func CheckBytes(input []byte) int {
 	for i := 0; i < len(input); i++ {
 		if input[i] < 0 {

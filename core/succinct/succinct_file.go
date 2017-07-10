@@ -66,3 +66,5 @@ type SuccinctIndexedFile interface {
 	RecordSearchIds(query Source) []int32
 	RecordSearchIdsByByteArr(query []byte) []int32
 }
+
+

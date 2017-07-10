@@ -28,7 +28,7 @@ func ReadSuccinctBufferFromFile(file *os.File) *SuccinctBuffer {
 	return mapFromBuf(buf)
 }
 
-func BuildSuccinctBufferFromInput(input *util.Source,
+func BuildSuccinctBufferFromInput(input *SuccinctSource,
 										conf *util.SuccinctConf) *SuccinctBuffer {
 	buf := new(bytes.Buffer)
 
