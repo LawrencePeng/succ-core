@@ -16,16 +16,17 @@ type SuccinctBuffer struct {
 }
 
 
-func ReadSuccinctBufferFromFile(file *os.File) *SuccinctBuffer {
+func ReadSuccinctBufferFromFile(file *os.File) (*SuccinctBuffer, *bytes.Buffer) {
 	stat, err := file.Stat()
 	if err != nil {
-		return nil
+		return nil, nil
 	}
+
 	size := stat.Size()
 	bts := make([]byte, size)
 	file.Read(bts)
 	buf := bytes.NewBuffer(bts)
-	return mapFromBuf(buf)
+	return mapFromBuf(buf), buf
 }
 
 func BuildSuccinctBufferFromInput(input *SuccinctSource,

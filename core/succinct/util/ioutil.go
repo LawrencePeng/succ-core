@@ -14,10 +14,10 @@ func ReadArray(buf *bytes.Buffer) []int32 {
 	return arr
 }
 
-func WriteArray(arr []int32, buf *bytes.Buffer) {
-	binary.Write(buf, binary.BigEndian, int32(len(arr)))
+func WriteArray(buf *bytes.Buffer, arr []int32)  {
+	WriteInt(buf, int32(len(arr)))
 	for _, v := range arr {
-		binary.Write(buf, binary.BigEndian, v)
+		WriteInt(buf, v)
 	}
 }
 
