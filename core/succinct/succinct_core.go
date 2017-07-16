@@ -15,26 +15,26 @@ type Succinct interface {
 }
 
 type SuccinctCore struct {
-	Alphabet         []int32
-	OriginalSize     int32
-	SamplingRateSA   int32
-	SamplingRateISA  int32
-	SamplingRateNPA  int32
-	SamplingBitWidth int32
+	Alphabet        []int32
+	OriginalSize    int32
+	SamplingRateSA  int32
+	SamplingRateISA int32
+	SamplingRateNPA int32
+	SampleBitWidth  int32
 }
 
 func (sc *SuccinctCore) FindCharacter(c int32) int32 {
 	bg := int32(1)
-	end := int32(len(sc.Alphabet))
+	end := int32(len(sc.Alphabet)) - 1
 
 	for ; bg <= end; {
-		mid := (bg + end) >> 1
+		mid := (bg + end) / 2
 		if sc.Alphabet[mid] == c {
 			return mid
 		} else if sc.Alphabet[mid] > c {
-			bg = mid - 1
+			end = mid - 1
 		} else {
-			end = mid + 1
+			bg = mid + 1
 		}
 	}
 

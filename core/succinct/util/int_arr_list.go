@@ -26,7 +26,7 @@ func NewIntArrayList() *IntArrayList {
 }
 
 func NumOfLeadingZero(i int32) int32 {
-	if i == 0 {
+	if i == int32(0) {
 		return 32
 	}
 
@@ -48,7 +48,7 @@ func NumOfLeadingZero(i int32) int32 {
 		i = i << 2
 	}
 
-	n -= int32(uint32(i >> 31))
+	n += int32(i >> 31)
 	return n
 }
 

@@ -45,7 +45,6 @@ type SuccinctFile interface {
 	FwdSearch(buf []byte) Range
 	FwdSearchWithSource(s Source) Range
 	ContinueFwdSearch(buf []byte, r Range) Range
-	ContinueFwdSearchWithSource(source Source, r Range) Range
 	Count(q []byte) int64
 	CountWithSource(s Source) int64
 	SuccinctIndexOffsets(r Range) []int64

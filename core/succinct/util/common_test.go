@@ -1,10 +1,10 @@
-package util
+package util_test
 
 import (
 	"testing"
 	"fmt"
 )
-
+import . "."
 func assertEqual(t *testing.T, a interface{}, b interface{}, message string) {
 	if a == b {
 		return
@@ -16,15 +16,15 @@ func assertEqual(t *testing.T, a interface{}, b interface{}, message string) {
 }
 
 func TestIntLog2(t *testing.T) {
-	assertEqual(t, IntLog2(0), 1, "")
-	assertEqual(t, IntLog2(1), 0, "")
-	assertEqual(t, IntLog2(2), 1, "")
-	assertEqual(t, IntLog2(3), 2, "")
-	assertEqual(t, IntLog2(4), 2, "")
-	assertEqual(t, IntLog2(5), 3, "")
-	assertEqual(t, IntLog2(6), 3, "")
-	assertEqual(t, IntLog2(99), 7, "")
-	assertEqual(t, IntLog2(-5), -1, "")
+	assertEqual(t, int(IntLog2(0)), 1, "")
+	assertEqual(t, int(IntLog2(1)), 0, "")
+	assertEqual(t, int(IntLog2(2)), 1, "")
+	assertEqual(t, int(IntLog2(3)), 2, "")
+	assertEqual(t, int(IntLog2(4)), 2, "")
+	assertEqual(t, int(IntLog2(5)), 3, "")
+	assertEqual(t, int(IntLog2(6)), 3, "")
+	assertEqual(t, int(IntLog2(99)), 7, "")
+	assertEqual(t, int(IntLog2(-5)), -1, "")
 }
 
 func TestMod(t *testing.T) {
@@ -35,17 +35,17 @@ func TestMod(t *testing.T) {
 }
 
 func TestPopCount(t *testing.T) {
-	assertEqual(t, PopCount(uint64(0)), 0, "")
-	assertEqual(t, PopCount(0xFFFFFFFFFFFFFFFF), 64, "")
-	assertEqual(t, PopCount(0xFFFF0000), 16, "")
+	assertEqual(t, PopCount(uint64(0)), int32(0), "")
+	assertEqual(t, PopCount(0xFFFFFFFFFFFFFFFF), int32(64), "")
+	assertEqual(t, PopCount(0xFFFF0000), int32(16), "")
 }
 
 func TestNumBlocks(t *testing.T) {
-	assertEqual(t, NumBlocks(0, 5), 0, "a")
+	assertEqual(t, NumBlocks(0, 5), int32(0), "a")
 	for i := 1; i <= 5; i++ {
-		assertEqual(t, NumBlocks(i, 5), 1, "b")
+		assertEqual(t, NumBlocks(int32(i), 5), int32(1), "b")
 	}
-	assertEqual(t, NumBlocks(6, 5), 2, "c")
-	assertEqual(t, NumBlocks(256, 5), 52, "d")
-	assertEqual(t, NumBlocks(255, 5), 51, "e")
+	assertEqual(t, NumBlocks(6, 5), int32(2), "c")
+	assertEqual(t, NumBlocks(256, 5), int32(52), "d")
+	assertEqual(t, NumBlocks(255, 5), int32(51), "e")
 }

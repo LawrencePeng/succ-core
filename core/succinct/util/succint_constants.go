@@ -14,7 +14,6 @@ var DEFAULT_SA_SAMPLING_SIZE = 32
 var DEFAULT_ISA_SAMPLING_SIZE = 32
 var DEFAULT_NSA_SAMPLING_SIZE = 128
 
-var EOF = int8(-128) - 1
+var EOF = int32(-128 - 1)
 
 var EOL = '\n'
-

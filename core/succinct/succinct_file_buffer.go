@@ -51,14 +51,18 @@ func (succFBuf *SuccinctFileBuffer) CompressedSize() int32 {
 }
 
 func (succFBuf *SuccinctFileBuffer) CharAt(i int64) byte {
-	return byte(succFBuf.SuccBuf.LookUpC(succFBuf.SuccBuf.LookUpSA(i)))
+	return byte(succFBuf.SuccBuf.LookUpC(succFBuf.SuccBuf.LookUpISA(i)))
 }
 
 func (succFBuf *SuccinctFileBuffer) ExtractWith(offset int64, len int32, ctx *ExtractContext) string {
 	buf := new(bytes.Buffer)
 	s := succFBuf.SuccBuf.LookUpISA(offset)
-	for k := int32(0); k < len && int32(offset)+k < succFBuf.Size(); k++ {
+	for k := int32(0); k < len && int32(offset) + k < succFBuf.Size(); k++ {
 		nextCh := succFBuf.SuccBuf.LookUpC(s)
+		if nextCh < 0 || nextCh > 0xFFFF {
+			break
+		}
+
 		buf.WriteByte(byte(nextCh))
 		s = succFBuf.SuccBuf.LookUpNPA(s)
 	}
@@ -82,7 +86,7 @@ func (succFBuf *SuccinctFileBuffer) ExtractUntilWith(offset int64, delim int32, 
 	var nextCh int32
 	nextCh = succFBuf.SuccBuf.LookUpC(s)
 	if nextCh == delim || nextCh == int32(util.EOF) {
-		if ctx == nil {
+		if ctx != nil {
 			ctx.Marker = s
 		}
 		return string(buf.Bytes())
@@ -98,7 +102,7 @@ func (succFBuf *SuccinctFileBuffer) ExtractUntilWith(offset int64, delim int32, 
 		buf.WriteByte(byte(nextCh))
 		s = succFBuf.SuccBuf.LookUpNPA(s)
 	}
-	if ctx == nil {
+	if ctx != nil {
 		ctx.Marker = s
 	}
 	return string(buf.Bytes())
@@ -131,7 +135,7 @@ func (succFBuf *SuccinctFileBuffer) ExtractBytes(offset int64, len int32) []byte
 func (succFBuf *SuccinctFileBuffer) BwdSearch(source *SuccinctSource) *util.Range {
 	ran := &util.Range{
 		From: 0,
-		To: 0,
+		To: -1,
 	}
 
 	m := int32((*source).Len())
@@ -155,16 +159,13 @@ func (succFBuf *SuccinctFileBuffer) BwdSearch(source *SuccinctSource) *util.Rang
 		pos = succFBuf.SuccBuf.Core.FindCharacter(source.Get(i))
 		if pos >= 0 {
 			c1 = int64(succFBuf.SuccBuf.ColumnOffsets[pos])
-			if pos >= 0 {
-				c1 = int64(succFBuf.SuccBuf.ColumnOffsets[pos])
-				if pos + 1 == alphaSize {
-					c2 = int64(succFBuf.SuccBuf.Core.OriginalSize)
-				} else {
-					c2 = int64(succFBuf.SuccBuf.ColumnOffsets[pos + 1] - 1)
-				}
+			if pos + 1 == alphaSize {
+				c2 = int64(succFBuf.SuccBuf.Core.OriginalSize)
 			} else {
-				return &util.Range{From:0, To: -1}
+				c2 = int64(succFBuf.SuccBuf.ColumnOffsets[pos + 1] - 1)
 			}
+		} else {
+			return &util.Range{From:0, To: -1}
 		}
 
 		if c1 > c2 {

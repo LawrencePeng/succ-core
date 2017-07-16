@@ -43,7 +43,7 @@ func CopyFromIntArrayList(data *IntArrayList, bitWidth int32) *IntVector {
 	return iv
 }
 
-func ReadIntVectorFromBuf(buf bytes.Buffer) *IntVector {
+func ReadIntVectorFromBuf(buf *bytes.Buffer) *IntVector {
 	bitWidth := ReadInt(buf)
 	if bitWidth == 0 {
 		return nil

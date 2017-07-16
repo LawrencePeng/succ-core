@@ -48,8 +48,8 @@ func (div *DeltaIntVector) encode(elements []int32, startingOffset int32, length
 	for i := int32(0); i < length; i++ {
 		if i % div.SamplingRate == 0 {
 			samplesBuf.Add(elements[startingOffset + i])
-			if elements[startingOffset + 1] > maxSample {
-				maxSample = elements[startingOffset + 1]
+			if elements[startingOffset + i] > maxSample {
+				maxSample = elements[startingOffset + i]
 			}
 			if cumulativeDeltaSize > maxOffset {
 				maxOffset = cumulativeDeltaSize
@@ -161,24 +161,24 @@ func (div *DeltaIntVector) Get(i int32) int32 {
 func (div *DeltaIntVector) SerializedSize() int32 {
 	var samplesSize, deltaOffsetSize, deltaSize int32
 	if div.Samples == nil {
-		samplesSize = int32(INT_SIZE)
+		samplesSize = 4
 	} else {
 		samplesSize = div.Samples.SerializedSize()
 	}
 
 	if div.DeltaOffsets == nil {
-		deltaOffsetSize = int32(INT_SIZE)
+		deltaOffsetSize = 4
 	} else {
 		deltaOffsetSize = div.DeltaOffsets.SerializedSize()
 	}
 
 	if div.Deltas == nil {
-		deltaSize = int32(INT_SIZE)
+		deltaSize = 4
 	} else {
 		deltaSize = div.Deltas.SerializedSize()
 	}
 
-	return int32(INT_SIZE) + samplesSize + deltaOffsetSize + deltaSize
+	return 4 + samplesSize + deltaOffsetSize + deltaSize
 }
 
 func (div *DeltaIntVector) WriteToBuf(buf *bytes.Buffer)  {
@@ -206,13 +206,13 @@ func DIVPrefixSum(deltas []int64, deltaOffset int32, untilIdx int32) int32 {
 	deltaSum := int32(0)
 	deltaIdx := int64(0)
 
-	currentDeltaOffset := deltaIdx
+	currentDeltaOffset := int64(deltaOffset)
 	for ; deltaIdx != int64(untilIdx); {
 		block := int32(BitVecGetValue(deltas, currentDeltaOffset, 16))
 		cnt := PreCount(block)
 		if cnt == 0 {
 			deltaWidth := int32(0)
-			for ; BitVecGetBit(deltas, currentDeltaOffset) != -1; {
+			for ; BitVecGetBit(deltas, currentDeltaOffset) != 1; {
 				deltaWidth++
 				currentDeltaOffset++
 			}
@@ -248,7 +248,7 @@ func ToLongSlice(bts []byte) []int64 {
 	length := len(bts)
 	size := length / LONG_SIZE
 	ret := make([]int64, size)
-	for i := 0; i <= size; i++ {
+	for i := 0; i < size; i++ {
 		ret[i] = int64(binary.BigEndian.Uint64(bts[LONG_SIZE * i : LONG_SIZE * i + LONG_SIZE]))
 	}
 	return ret
@@ -256,42 +256,81 @@ func ToLongSlice(bts []byte) []int64 {
 
 func ToIntSlice(bts []byte) []int32 {
 	length := len(bts)
-	size := length / LONG_SIZE
+	size := length / INT_SIZE
 	ret := make([]int32, size)
-	for i := 0; i <= size; i++ {
-		ret[i] = int32(binary.BigEndian.Uint32(bts[LONG_SIZE * i : INT_SIZE * i + INT_SIZE]))
+	for i := 0; i < size; i++ {
+		ret[i] = int32(binary.BigEndian.Uint32(bts[INT_SIZE * i : INT_SIZE * i + INT_SIZE]))
 	}
 	return ret
 }
 
-func DIVGet(buf *bytes.Buffer, i int32) int32 {
-	bts := buf.Bytes()
+func ReadIntFromReader(rdr *bytes.Reader) int32 {
+	bts := make([]byte, INT_SIZE)
+	rdr.Read(bts)
+	return BytesToInt(bts)
+}
 
-	samplingRate := ReadInt(buf)
-	sampleBits := ReadInt(buf)
-	sampleBlocks := ReadInt(buf)
+func ReadIntAtFromReader(rdr *bytes.Reader, off int64) int32 {
+	bts := make([]byte, INT_SIZE)
+	rdr.ReadAt(bts, off)
+	return BytesToInt(bts)
+}
 
-	samples := ToLongSlice(buf.Next(LONG_SIZE * int(sampleBlocks)))
+func NextFromReader(rdr *bytes.Reader, n int) []byte {
+	bts := make([]byte, n)
+	rdr.Read(bts)
+	return bts
+}
+
+func NextAtFromReader(rdr *bytes.Reader, off int64, n int) []byte {
+	bts := make([]byte, n)
+	rdr.ReadAt(bts, off)
+	return bts
+}
+
+func BytesToInt(bts []byte) int32 {
+	return int32(binary.BigEndian.Uint32(bts))
+}
+
+func DIVGet(bts *[]byte, i int32) int32 {
+	pos := int64(0)
+
+	samplingRate := BytesToInt((*bts)[pos: pos + 4])
+	pos += 4
+
+	sampleBits := BytesToInt((*bts)[pos: pos + 4])
+	pos += 4
+
+	sampleBlocks := BytesToInt((*bts)[pos: pos + 4])
+	pos += 4
+
+	samples := ToLongSlice((*bts)[pos:pos + int64(sampleBlocks) * int64(LONG_SIZE)])
+	pos += int64(sampleBlocks) * int64(LONG_SIZE)
 
 	samplesIdx := i / samplingRate
 	deltaOffsetsIdx := i % samplingRate
 	val := IntVecGet(samples, samplesIdx, sampleBits)
 
 	if deltaOffsetsIdx == 0 {
-		buf = bytes.NewBuffer(bts)
 		return val
 	}
 
-	deltaOffsetBits := ReadInt(buf)
-	deltaOffsetBlocks := ReadInt(buf)
+	deltaOffsetBits := BytesToInt((*bts)[pos: pos + 4])
+	pos += 4
 
-	deltaOffsets := ToLongSlice(buf.Next(int(deltaOffsetBlocks) * LONG_SIZE))
+	deltaOffsetBlocks := BytesToInt((*bts)[pos: pos + 4])
+	pos += 4
 
-	deltaBlocks := ReadInt(buf)
-	deltas := ToLongSlice(buf.Next(LONG_SIZE * int(deltaBlocks)))
+	deltaOffsets := ToLongSlice((*bts)[pos : pos + int64(deltaOffsetBlocks) * int64(LONG_SIZE)])
+	pos += int64(deltaOffsetBlocks) * int64(LONG_SIZE)
+
+
+	deltaBlocks := BytesToInt((*bts)[pos: pos + 4])
+	pos += 4
+
+	deltas := ToLongSlice((*bts)[pos: pos + int64(LONG_SIZE) * int64(deltaBlocks)])
 	deltaOffset := IntVecGet(deltaOffsets, samplesIdx, deltaOffsetBits)
 	val += DIVPrefixSum(deltas, deltaOffset, deltaOffsetsIdx)
-	buf = bytes.NewBuffer(bts)
 
 	return val
 }
@@ -319,24 +358,35 @@ func binarySearchSamples(samples []int64, sampleBits, val, s, e int32) int32 {
 	return ep
 }
 
-func BinarySearch(vector *bytes.Buffer, val, startIdx, endIdx int32, flag bool) int32 {
-	bts := vector.Bytes()
+func BinarySearch(bts *[]byte, val, startIdx, endIdx int32, flag bool) int32 {
 	if endIdx < startIdx {
 		return endIdx
 	}
+	pos := int(0)
+	samplingRate := BytesToInt((*bts)[pos: pos + 4])
+	pos += 4
 
-	samplingRate := ReadInt(vector)
-	sampleBits := ReadInt(vector)
-	sampleBlocks  := ReadInt(vector)
+	sampleBits := BytesToInt((*bts)[pos: pos + 4])
+	pos += 4
 
-	samples := ToLongSlice(vector.Next(int(sampleBlocks) * LONG_SIZE))
+	sampleBlocks := BytesToInt((*bts)[pos: pos + 4])
+	pos += 4
+
+	samples := ToLongSlice((*bts)[pos : pos + int(sampleBlocks) * LONG_SIZE])
+	pos += int(sampleBlocks) * LONG_SIZE
+
 	sampleOffset := binarySearchSamples(samples, sampleBits, val, startIdx / samplingRate, endIdx / samplingRate)
 	deltaLimit := int32(math.Min(float64(endIdx - (sampleOffset * samplingRate)), float64(samplingRate)))
 
-	deltaOffsetBits := ReadInt(vector)
-	deltaOffsetBlocks := ReadInt(vector)
+	deltaOffsetBits := BytesToInt((*bts)[pos: pos + 4])
+	pos += 4
 
-	deltaOffsets := ToLongSlice(vector.Next(LONG_SIZE * int(deltaOffsetBlocks)))
+	deltaOffsetBlocks := BytesToInt((*bts)[pos: pos + 4])
+	pos += 4
+
+	deltaOffsets := ToLongSlice((*bts)[pos : pos + LONG_SIZE * int(deltaOffsetBlocks)])
+	pos += LONG_SIZE * int(deltaOffsetBlocks)
+
 	currentDeltaOffset := IntVecGet(deltaOffsets, sampleOffset, deltaOffsetBits)
 
 	val -= IntVecGet(samples, sampleOffset, sampleBits)
@@ -344,8 +394,11 @@ func BinarySearch(vector *bytes.Buffer, val, startIdx, endIdx int32, flag bool) 
 	deltaIdx := int32(0)
 	deltaSum := int32(0)
 
-	deltaBlocks := ReadInt(vector)
-	deltas := ToLongSlice(vector.Next(LONG_SIZE * int(deltaBlocks)))
+	deltaBlocks := BytesToInt((*bts)[pos: pos + 4])
+	pos += 4
+
+	deltas := ToLongSlice((*bts)[pos : pos + LONG_SIZE * int(deltaBlocks)])
+	pos += LONG_SIZE * int(deltaBlocks)
 
 	for ; deltaSum < val && deltaIdx < deltaLimit; {
 		block := int32(BitVecGetValue(deltas, int64(currentDeltaOffset), 16))
@@ -354,7 +407,7 @@ func BinarySearch(vector *bytes.Buffer, val, startIdx, endIdx int32, flag bool) 
 
 		if cnt == 0 {
 			deltaWidth := int32(0)
-			for ; BitVecGetBit(deltas, int64(currentDeltaOffset)) != -1; {
+			for ; BitVecGetBit(deltas, int64(currentDeltaOffset)) != 1; {
 				deltaWidth++
 				currentDeltaOffset++
 			}
@@ -377,7 +430,7 @@ func BinarySearch(vector *bytes.Buffer, val, startIdx, endIdx int32, flag bool) 
 			lastDecodedValue := int32(0)
 			for ; deltaSum < val && deltaIdx < deltaLimit;  {
 				deltaWidth := int32(0)
-				for ; BitVecGetBit(deltas, int64(currentDeltaOffset)) != -1;  {
+				for ; BitVecGetBit(deltas, int64(currentDeltaOffset)) != 1;  {
 					deltaWidth++
 					currentDeltaOffset++
 				}
@@ -396,7 +449,6 @@ func BinarySearch(vector *bytes.Buffer, val, startIdx, endIdx int32, flag bool) 
 			}
 		}
 	}
-	vector = bytes.NewBuffer(bts)
 
 	ret := sampleOffset * samplingRate + deltaIdx
 

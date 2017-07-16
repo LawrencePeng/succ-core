@@ -1,6 +1,9 @@
 package util
 
-import "sort"
+import (
+	"sort"
+	"fmt"
+)
 
 type QSufSort struct {
 	I 			[]int32
@@ -29,17 +32,24 @@ func (q *QSufSort) initAlphabet(set *HashSet) {
 		q.Alphabet[i] = k
 		i++
 	}
-	sort.Sort(q.Alphabet)
+	tr := make([]int, len(q.Alphabet))
+	for i := 0; i < len(q.Alphabet); i++ {
+		tr[i] = int(q.Alphabet[i])
+	}
+	sort.Ints(tr)
+	for i := 0; i < len(q.Alphabet); i++ {
+		q.Alphabet[i] = int32(tr[i])
+	}
 }
 
 func (q *QSufSort) BuildSuffixArray(input Source) {
 	max := int32(EOF)
 	min := max
 
-	q.I = make([]int32, input.Len(), + 2)
+	q.I = make([]int32, input.Len() + 2)
 	q.V = make([]int32, input.Len() + 2)
 
-	alphabetSet := &HashSet{}
+	alphabetSet := &HashSet{M: make(map[int32]bool)}
 	for i := int32(0); i < input.Len(); i++ {
 		q.V[i] = input.Get(i)
 		if q.V[i] > max {
@@ -100,11 +110,11 @@ func (q *QSufSort) suffixSort(n int32, k int32, l int32) {
 			sl += s
 		} else {
 			if sl != 0 {
-				q.I[pi + sl] = sl
+				q.I[pi+sl] = sl
 				sl = 0
 			}
 			pk = q.V[s] + 1
-			q.sortSplit(pi, pk - pi)
+			q.sortSplit(pi, pk-pi)
 			pi = pk
 		}
 		for ; pi <= n; {
@@ -114,25 +124,25 @@ func (q *QSufSort) suffixSort(n int32, k int32, l int32) {
 				sl += s
 			} else {
 				if sl != 0 {
-					q.I[pi + sl] = sl
+					q.I[pi+sl] = sl
 					sl = 0
 				}
 				pk = q.V[s] + 1
-				q.sortSplit(pi, pk - pi)
+				q.sortSplit(pi, pk-pi)
 				pi = pk
 			}
 		}
 
 		if sl != 0 {
-			q.I[pi + sl] = sl
+			q.I[pi+sl] = sl
 		}
 		q.H = 2 * q.H
+
 	}
 
-	for i = 0; i <= n; i++{
+	for i = 0; i <= n; i++ {
 		if q.V[i] > 0 {
 			q.V[i] --
-
 			q.I[q.V[i]] = i
 		}
 	}
@@ -150,28 +160,35 @@ func (q *QSufSort) sortSplit(p int32, n int32) {
 	pb = p
 	pa = pb
 
-	pd = p + n + 1
-	pc = pc
+	pd = p + n - 1
+	pc = pd
 
-	for ; ; {
-		f = q.Key(pb)
+	for ;; {
+		if pb <= pc {
+			f = q.Key(pb)
+		}
 		for ; pb <= pc && f <= v;  {
 			if f == v {
 				q.Swap(pa, pb)
 				pa++
 			}
 			pb++
-			f = q.Key(pb)
+			if pb <= pc {
+				f = q.Key(pb)
+			}
 		}
-
-		f = q.Key(pc)
+		if pc >= pb {
+			f = q.Key(pc)
+		}
 		for ; pc >= pb && f >= v;  {
 			if f == v {
 				q.Swap(pc, pd)
 				pd--
 			}
 			pc--
-			f = q.Key(pc)
+			if pb <= pc {
+				f = q.Key(pc)
+			}
 		}
 		if pb > pc {
 			break
@@ -216,6 +233,15 @@ func (q *QSufSort) sortSplit(p int32, n int32) {
 	s = pb - pa
 	t = pd - pc
 
+	fmt.Print("pb")
+	fmt.Print(pb)
+	fmt.Print("pa")
+	fmt.Print(pa)
+	fmt.Print("pd")
+	fmt.Print(pd)
+	fmt.Print("pc")
+	fmt.Println(pc)
+
 	if s > 0 {
 		q.sortSplit(p, s)
 	}
@@ -228,14 +254,14 @@ func (q *QSufSort) choosePivot(p int32, n int32) int32 {
 	var pl, pm, pn int32
 	var s int32
 
-	pm = p + (n >> 1)
+	pm = p + int32(uint32(n) >> 1)
 
 	if n > 7 {
 		pl = p
 		pn = p + n - 1
 
 		if n > 40 {
-			s = n >> 3
+			s = int32(uint32(n) >> 3)
 			pl = q.MED3(pl, pl + s, pl + s + s)
 			pm = q.MED3(pm - s, pm, pm + s)
 			pn = q.MED3(pn - s - s, pn - s, pn)
@@ -306,11 +332,11 @@ func (q *QSufSort) updateGroup(pl int32, pm int32) {
 	if pl == pm {
 		q.I[pl] = -1
 	} else {
-		q.V[q.I[pl]] = g
 		pl++
+		q.V[q.I[pl]] = g
 		for ; pl < pm; {
-			q.V[q.I[pl]] = g
 			pl++
+			q.V[q.I[pl]] = g
 		}
 	}
 }
@@ -318,7 +344,9 @@ func (q *QSufSort) Swap(a int32, b int32) {
 	q.I[a], q.I[b] = q.I[b], q.I[a]
 }
 func (q *QSufSort) Key(p int32) int32 {
-	return q.V[q.I[p] + q.H]
+	a := q.I[p] + q.H
+	b := q.V[a]
+	return b
 }
 
 func (q *QSufSort) bucketSort(n int32, k int32) {
@@ -361,6 +389,7 @@ func (q *QSufSort) bucketSort(n int32, k int32) {
 		}
 	}
 }
+
 func (qS *QSufSort) transform(n int32, k int32, l int32, q int32) int32 {
 	var b, c, d, e, i, j, m, s int32
 	var pi, pj int32
@@ -368,61 +397,86 @@ func (qS *QSufSort) transform(n int32, k int32, l int32, q int32) int32 {
 	for i = k - l; i != 0; i = i >> 1 {
 		s ++
 	}
-	e = int32(0x7fffffff) >> uint(s)
+	e = int32(uint32(0x7fffffff) >> uint(s))
 	qS.R = 0
 	d = qS.R
 	b = d
-	c = d << uint(s)
-	for ;qS.R < n && d <= e && (c | (k - l)) < q; qS.R++ {
+	c = d << uint(s) | (k - l)
+
+	for ;qS.R < n && d <= e && c <= q; qS.R++ {
 		b = b << uint(s) | (qS.V[qS.R] - l + 1)
 		d = c
-		c = d << uint(s)
+
+		if qS.R < n && d <= e {
+			c = int32(uint32(d) << uint(s)) | (k - l)
+		}
 	}
 
-	m = (1 << uint(qS.R - 1) * s) - 1
+	m = (1 << uint((qS.R - 1) * s)) - 1
 	qS.V[n] = l - 1
 	if d <= n {
 		for pi = 0; pi <= d; pi++ {
 			qS.I[pi] = 0
 		}
+
 		pi = qS.R
 		c = b
+
 		for ; pi <= n; pi++ {
 			qS.I[c] = 1
 			c = (c & m) << uint(s) | (qS.V[pi] - l + 1)
 		}
+
 		for i = 1; i < qS.R; i++ {
 			qS.I[c] = 1
 			c = (c & m) << uint(s)
 		}
+
 		pi = 0
 		j = 1
+		for ; pi <= d; pi++ {
+			if qS.I[pi] != 0 {
+				qS.I[pi] = j
+				j++
+			}
+		}
+
+
+		pi = 0
+		pj = qS.R
 		c = b
-		for ; pj <= n; {
+		for ;pj <= n; {
 			qS.V[pi] = qS.I[c]
+			c = (c & m) << uint(s) | (qS.V[pj] - l + 1)
 			pi++
 			pj++
 		}
+
+
 		for ; pi < n; {
 			qS.V[pi] = qS.I[c]
 			pi++
 			c = (c & m) << uint(s)
 		}
+
 	} else {
 		pi = 0
 		pj = qS.R
 		c = b
+
 		for ; pj <= n; {
 			qS.V[pi] = c
 			c = (c & m) << uint(s) | (qS.V[pj] - l + 1)
 			pi++
 			pj++
 		}
+
 		for ; pi < n; {
 			qS.V[pi] = c
 			pi++
 			c = (c & m) << uint(s)
 		}
+
 		j = d + 1
 	}
 	qS.V[n] = 0

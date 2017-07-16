@@ -98,8 +98,8 @@ func BuildSuccinctBufferFromInput(input *SuccinctSource,
 			}
 		}
 
-		sampledSA.WriteToBuf(buf)
-		sampledISA.WriteToBuf(buf)
+		sampledSA.Bv.WriteToDataBuf(buf)
+		sampledISA.Bv.WriteToDataBuf(buf)
 	}
 
 	{
@@ -122,7 +122,8 @@ func BuildSuccinctBufferFromInput(input *SuccinctSource,
 			}
 			length := endOffset - startOffset
 			columnVector := util.NewDeltaIntVectorFull(NPA, startOffset, length, samplingRateNPA)
-			util.WriteInt(buf, columnVector.SerializedSize())
+			sz := columnVector.SerializedSize()
+			util.WriteInt(buf, sz)
 			columnVector.WriteToBuf(buf)
 		}
 	}
@@ -138,7 +139,7 @@ func mapFromBuf(buf *bytes.Buffer) *SuccinctBuffer {
 	core.SamplingRateSA = util.ReadInt(buf)
 	core.SamplingRateISA = util.ReadInt(buf)
 	core.SamplingRateNPA = util.ReadInt(buf)
-	core.SamplingBitWidth = util.ReadInt(buf)
+	core.SampleBitWidth = util.ReadInt(buf)
 
 	alphabetSize := util.ReadInt(buf)
 	core.Alphabet = make([]int32, alphabetSize)
@@ -152,13 +153,13 @@ func mapFromBuf(buf *bytes.Buffer) *SuccinctBuffer {
 	}
 
 	totalSampledBitsSA := util.NumBlocks(core.OriginalSize, core.SamplingRateSA) *
-		core.SamplingBitWidth
+		core.SampleBitWidth
 
 	saSize := util.BitsToBlock64(int64(totalSampledBitsSA)) * int32(util.LONG_SIZE)
 	succBuf.SA = util.ToLongSlice(buf.Next(int(saSize)))
 
 	totalSampledBitsISA := util.NumBlocks(core.OriginalSize, core.SamplingRateISA) *
-		core.SamplingBitWidth
+		core.SampleBitWidth
 
 	isaSize := util.BitsToBlock64(int64(totalSampledBitsISA)) * int32(util.LONG_SIZE)
 	succBuf.ISA = util.ToLongSlice(buf.Next(int(isaSize)))
@@ -180,7 +181,7 @@ func (succBuf *SuccinctBuffer) WriteToBuf(buf *bytes.Buffer) {
 	util.WriteInt(buf, succBuf.Core.SamplingRateSA)
 	util.WriteInt(buf, succBuf.Core.SamplingRateISA)
 	util.WriteInt(buf, succBuf.Core.SamplingRateNPA)
-	util.WriteInt(buf, succBuf.Core.SamplingBitWidth)
+	util.WriteInt(buf, succBuf.Core.SampleBitWidth)
 	alphabetSize := int32(len(succBuf.Core.Alphabet))
 	util.WriteInt(buf, alphabetSize)
 
@@ -229,7 +230,7 @@ func (succBuf * SuccinctBuffer) LookUpNPA(i int64) int64 {
 	if colId >= alphabetSize || int64(succBuf.ColumnOffsets[colId]) > i {
 		panic("LookUpNPA Wrong colId")
 	}
-	return int64(util.DIVGet(bytes.NewBuffer(succBuf.Columns[colId]), int32(i) - succBuf.ColumnOffsets[colId]))
+	return int64(util.DIVGet(&succBuf.Columns[colId], int32(i) - succBuf.ColumnOffsets[colId]))
 }
 
 func (succBuf *SuccinctBuffer) LookUpSA(i int64) int64 {
@@ -242,7 +243,7 @@ func (succBuf *SuccinctBuffer) LookUpSA(i int64) int64 {
 		i = succBuf.LookUpNPA(i)
 		j++
 	}
-	saVal := util.IntVecGet(succBuf.SA, int32(i) / succBuf.Core.SamplingRateSA, succBuf.Core.SamplingBitWidth)
+	saVal := util.IntVecGet(succBuf.SA, int32(i) / succBuf.Core.SamplingRateSA, succBuf.Core.SampleBitWidth)
 	if saVal < j {
 		return int64(succBuf.Core.OriginalSize - (j - saVal))
 	}
@@ -256,7 +257,7 @@ func (succBuf *SuccinctBuffer) LookUpISA(i int64) int64 {
 	}
 
 	sampleIdx := int32(i) / succBuf.Core.SamplingRateISA
-	pos := util.IntVecGet(succBuf.ISA, sampleIdx, succBuf.Core.SamplingBitWidth)
+	pos := util.IntVecGet(succBuf.ISA, sampleIdx, succBuf.Core.SampleBitWidth)
 	i -= int64(sampleIdx * succBuf.Core.SamplingRateISA)
 	for ; i != 0; {
 		i--
@@ -284,6 +285,6 @@ func (succBuf *SuccinctBuffer) BinSearchNPA(val, startIdx, endIdx int64, flag bo
 	sp := int32(startIdx) - colValue
 	ep := int32(endIdx) - colValue
 
-	res := util.BinarySearch(bytes.NewBuffer(succBuf.Columns[colId]), int32(val), sp, ep, flag)
+	res := util.BinarySearch(&succBuf.Columns[colId], int32(val), sp, ep, flag)
 	return int64(colValue + res)
 }
