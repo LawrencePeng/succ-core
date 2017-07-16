@@ -124,7 +124,7 @@ func (succIFB *SuccinctIndexedFileBuffer) OffsetToRecordId(pos int32) int32 {
 }
 
 func (succIFB *SuccinctIndexedFileBuffer) RecordSearchIds(q *SuccinctSource) []int32 {
-	results := &util.HashSet{}
+	results := &util.HashSet{M: make(map[int32]bool)}
 	r := succIFB.SuccFBuf.BwdSearch(q)
 
 	sp := r.From

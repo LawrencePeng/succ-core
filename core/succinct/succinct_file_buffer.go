@@ -57,7 +57,7 @@ func (succFBuf *SuccinctFileBuffer) CharAt(i int64) byte {
 func (succFBuf *SuccinctFileBuffer) ExtractWith(offset int64, len int32, ctx *ExtractContext) string {
 	buf := new(bytes.Buffer)
 	s := succFBuf.SuccBuf.LookUpISA(offset)
-	for k := int32(0); k < len && int32(offset) + k < succFBuf.Size(); k++ {
+	for k := int32(0); k <= len && int32(offset)+k <= succFBuf.Size(); k++ {
 		nextCh := succFBuf.SuccBuf.LookUpC(s)
 		if nextCh < 0 || nextCh > 0xFFFF {
 			break

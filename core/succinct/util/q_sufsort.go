@@ -2,7 +2,6 @@ package util
 
 import (
 	"sort"
-	"fmt"
 )
 
 type QSufSort struct {
@@ -232,15 +231,6 @@ func (q *QSufSort) sortSplit(p int32, n int32) {
 
 	s = pb - pa
 	t = pd - pc
-
-	fmt.Print("pb")
-	fmt.Print(pb)
-	fmt.Print("pa")
-	fmt.Print(pa)
-	fmt.Print("pd")
-	fmt.Print(pd)
-	fmt.Print("pc")
-	fmt.Println(pc)
 
 	if s > 0 {
 		q.sortSplit(p, s)

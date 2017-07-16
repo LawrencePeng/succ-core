@@ -3,9 +3,9 @@ package succinct_test
 import (
 	"testing"
 	"os"
-	. "."
 	"./util"
 	"fmt"
+	. "."
 )
 
 func TestCharAt(t *testing.T) {
