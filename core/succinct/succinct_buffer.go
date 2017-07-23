@@ -112,6 +112,7 @@ func BuildSuccinctBufferFromInput(input *SuccinctSource,
 			NPA[ISA[i - 1]] = ISA[i]
 		}
 		NPA[ISA[originalSize - 1]] = ISA[0]
+
 		for i := int32(0); i < alphabetSize; i++ {
 			startOffset := columnOffsets[i]
 			var endOffset int32

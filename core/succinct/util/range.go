@@ -9,6 +9,7 @@ func (r *Range) Contains(point int64) bool {
 	return point >= r.From && point <= r.To
 }
 
+
 func (r *Range) ContainsRange(rr *Range) bool {
 	return rr.From >= r.From && rr.To <= r.To
 }

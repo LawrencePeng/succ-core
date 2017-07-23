@@ -30,6 +30,7 @@ func BuildSuccinctFileBufferFromInput(input string, conf *util.SuccinctConf) *Su
 	succBuf := BuildSuccinctBufferFromInput(&SuccinctSource{
 		Bts: bts,
 	}, conf)
+
 	return &SuccinctFileBuffer{
 		SuccBuf: succBuf,
 	}
@@ -135,7 +136,7 @@ func (succFBuf *SuccinctFileBuffer) ExtractBytes(offset int64, len int32) []byte
 func (succFBuf *SuccinctFileBuffer) BwdSearch(source *SuccinctSource) *util.Range {
 	ran := &util.Range{
 		From: 0,
-		To: -1,
+		To:   -1,
 	}
 
 	m := int32((*source).Len())
@@ -146,41 +147,57 @@ func (succFBuf *SuccinctFileBuffer) BwdSearch(source *SuccinctSource) *util.Rang
 	pos := succFBuf.SuccBuf.Core.FindCharacter((*source).Get(m - 1))
 	if pos >= 0 {
 		ran.From = int64(succFBuf.SuccBuf.ColumnOffsets[pos])
-		if pos + 1 == alphaSize {
+		if pos+1 == alphaSize {
 			ran.To = int64(succFBuf.SuccBuf.Core.OriginalSize)
 		} else {
-			ran.To = int64(succFBuf.SuccBuf.ColumnOffsets[pos + 1] - 1)
+			ran.To = int64(succFBuf.SuccBuf.ColumnOffsets[pos+1] - 1)
 		}
 	} else {
-		return &util.Range{From:0, To: -1}
+		return &util.Range{From: 0, To: -1}
 	}
 
 	for i := m - 2; i >= 0; i-- {
 		pos = succFBuf.SuccBuf.Core.FindCharacter(source.Get(i))
 		if pos >= 0 {
 			c1 = int64(succFBuf.SuccBuf.ColumnOffsets[pos])
-			if pos + 1 == alphaSize {
+			if pos+1 == alphaSize {
 				c2 = int64(succFBuf.SuccBuf.Core.OriginalSize)
 			} else {
-				c2 = int64(succFBuf.SuccBuf.ColumnOffsets[pos + 1] - 1)
+				c2 = int64(succFBuf.SuccBuf.ColumnOffsets[pos+1] - 1)
 			}
 		} else {
-			return &util.Range{From:0, To: -1}
+			return &util.Range{From: 0, To: -1}
 		}
 
 		if c1 > c2 {
-			return &util.Range{From:0, To: -1}
+			return &util.Range{From: 0, To: -1}
 		}
 
 		ran.From = succFBuf.SuccBuf.BinSearchNPA(ran.From, c1, c2, false)
 		ran.To = succFBuf.SuccBuf.BinSearchNPA(ran.To, c1, c2, true)
 
 		if ran.From > ran.To {
-			return &util.Range{From:0, To: -1}
+			return &util.Range{From: 0, To: -1}
 		}
 	}
 
 	return ran
+}
+
+func (succFBuf *SuccinctFileBuffer) BwdSearchStr(str string) *util.Range {
+	return succFBuf.BwdSearch(&SuccinctSource{
+		Bts: []byte(str),
+	})
+}
+
+func (succFBuf *SuccinctFileBuffer) FwdSearchStr(str string) *util.Range {
+	return succFBuf.FwdSearchWithSource(&SuccinctSource{
+		Bts: []byte(str),
+	})
+}
+
+func (succFBuf *SuccinctFileBuffer) ContinueBwdSearchStr(q string, ran *util.Range) *util.Range  {
+	return succFBuf.ContinueBwdSearch(q, ran)
 }
 
 func (succFBuf *SuccinctFileBuffer) ContinueBwdSearchWithSource(source *SuccinctSource, r *util.Range) *util.Range {
@@ -188,7 +205,7 @@ func (succFBuf *SuccinctFileBuffer) ContinueBwdSearchWithSource(source *Succinct
 		return r
 	}
 
-	newRange := &util.Range{From: r.From, To:r.To}
+	newRange := &util.Range{From: r.From, To: r.To}
 	m := (*source).Len()
 	var c1, c2 int64
 
@@ -197,22 +214,22 @@ func (succFBuf *SuccinctFileBuffer) ContinueBwdSearchWithSource(source *Succinct
 		pos := succFBuf.SuccBuf.Core.FindCharacter((*source).Get(i))
 		if pos >= 0 {
 			c1 = int64(succFBuf.SuccBuf.ColumnOffsets[pos])
-			if pos + 1 == alphaSize {
+			if pos+1 == alphaSize {
 				c2 = int64(succFBuf.SuccBuf.Core.OriginalSize)
 			} else {
-				c2 = int64(succFBuf.SuccBuf.ColumnOffsets[pos + 1] - 1)
+				c2 = int64(succFBuf.SuccBuf.ColumnOffsets[pos+1] - 1)
 			}
 		} else {
 			return &util.Range{
-				From:0,
-				To:-1,
+				From: 0,
+				To:   -1,
 			}
 		}
 
 		if c1 > c2 {
 			return &util.Range{
-				From:0,
-				To:-1,
+				From: 0,
+				To:   -1,
 			}
 		}
 
@@ -221,14 +238,20 @@ func (succFBuf *SuccinctFileBuffer) ContinueBwdSearchWithSource(source *Succinct
 
 		if newRange.From > newRange.To {
 			return &util.Range{
-				From:0,
-				To:-1,
+				From: 0,
+				To:   -1,
 			}
 		}
 	}
 
 	return newRange
 
+}
+
+func (succFBuf *SuccinctFileBuffer) ContinueBwdSearch(q string, ran *util.Range) *util.Range {
+	return succFBuf.ContinueBwdSearchWithSource(&SuccinctSource{
+		Bts: []byte(q),
+	}, ran)
 }
 
 func (succFBuf *SuccinctFileBuffer) Compare(source *SuccinctSource, i int64) int32 {
@@ -246,7 +269,7 @@ func (succFBuf *SuccinctFileBuffer) Compare(source *SuccinctSource, i int64) int
 	}
 	i = succFBuf.SuccBuf.LookUpNPA(i)
 
-	for ; j < (*source).Len(); {
+	for j < (*source).Len() {
 		c = succFBuf.SuccBuf.LookUpC(i)
 		b = (*source).Get(j)
 
@@ -280,7 +303,7 @@ func (succFBuf *SuccinctFileBuffer) CompareWithSourceAndOffSet(s *SuccinctSource
 	i = int32(succFBuf.SuccBuf.LookUpNPA(int64(i)))
 	j++
 
-	for ; j < (*s).Len();  {
+	for j < (*s).Len() {
 		c = succFBuf.SuccBuf.LookUpC(int64(i))
 		b = (*s).Get(j)
 		if b < c {
@@ -300,7 +323,7 @@ func (succFBuf *SuccinctFileBuffer) FwdSearchWithSource(source *SuccinctSource) 
 
 	sp := int32(0)
 	var s int32
-	for ; sp < st;  {
+	for sp < st {
 		s = (sp + st) / 2
 		if succFBuf.Compare(source, int64(s)) > 0 {
 			sp = s + 1
@@ -313,7 +336,7 @@ func (succFBuf *SuccinctFileBuffer) FwdSearchWithSource(source *SuccinctSource) 
 
 	ep := sp - 1
 	var e int32
-	for ; ep < et; {
+	for ep < et {
 		e = int32(math.Ceil(float64((ep + et) / 2)))
 		if succFBuf.Compare(source, int64(e)) == 0 {
 			ep = e
@@ -323,10 +346,16 @@ func (succFBuf *SuccinctFileBuffer) FwdSearchWithSource(source *SuccinctSource) 
 	}
 
 	return &util.Range{
-		From:int64(sp),
-		To: int64(ep),
+		From: int64(sp),
+		To:   int64(ep),
 	}
 }
+
+
+func (succFBuf *SuccinctFileBuffer) ContinueFwdSearchWithQuery(q string, r *util.Range, offset int32) *util.Range {
+	return succFBuf.ContinueFwdSearchWithSource(&SuccinctSource{Bts:[]byte(q)}, r, offset)
+}
+
 
 func (succFBuf *SuccinctFileBuffer) ContinueFwdSearchWithSource(source *SuccinctSource, r *util.Range, offset int32) *util.Range {
 	if source.Len() == 0 || r.Empty() {
@@ -337,7 +366,7 @@ func (succFBuf *SuccinctFileBuffer) ContinueFwdSearchWithSource(source *Succinct
 	sp := int32(r.From)
 	var s int32
 
-	for ; sp < st; {
+	for sp < st {
 		s = (sp + st) / 2
 		if succFBuf.CompareWithSourceAndOffSet(source, s, offset) > 0 {
 			sp = sp + 1
@@ -350,7 +379,7 @@ func (succFBuf *SuccinctFileBuffer) ContinueFwdSearchWithSource(source *Succinct
 	ep := sp - 1
 	var e int32
 
-	for ; ep < et; {
+	for ep < et {
 		e = int32(math.Ceil(float64((ep + et) / 2)))
 		if succFBuf.CompareWithSourceAndOffSet(source, e, offset) == 0 {
 			ep = e
@@ -359,9 +388,9 @@ func (succFBuf *SuccinctFileBuffer) ContinueFwdSearchWithSource(source *Succinct
 		}
 	}
 
-	return &util.Range {
+	return &util.Range{
 		From: int64(sp),
-		To: int64(ep),
+		To:   int64(ep),
 	}
 }
 
@@ -373,7 +402,6 @@ func (succFBuf *SuccinctFileBuffer) Count(query *SuccinctSource) int64 {
 func (succFBuf *SuccinctFileBuffer) SuccinctIndexToOffset(i int64) int64 {
 	return succFBuf.SuccBuf.LookUpSA(i)
 }
-
 
 func (succFBuf *SuccinctFileBuffer) RangeToOffsets(r *util.Range) []int64 {
 	if r.Empty() {
@@ -388,11 +416,14 @@ func (succFBuf *SuccinctFileBuffer) RangeToOffsets(r *util.Range) []int64 {
 	return offsets
 }
 
+func (succFBuf *SuccinctFileBuffer) Alphabet() []int32 {
+	return succFBuf.SuccBuf.Core.Alphabet
+}
+
 func (succFBuf *SuccinctFileBuffer) Search(query *SuccinctSource) []int64 {
 	return succFBuf.RangeToOffsets(succFBuf.BwdSearch(query))
 }
 
-
-func (succFBuf *SuccinctFileBuffer) SameRecord(fir, sec int64) bool {
+func (succFBuf *SuccinctFileBuffer) SameRecord(fir, sec int32) bool {
 	return true
 }

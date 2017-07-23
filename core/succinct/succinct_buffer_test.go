@@ -22,7 +22,7 @@ func TestReadSuccinctBufferFromFile(t *testing.T) {
 	bts := make([]byte, size)
 	f.Read(bts)
 
-	succ := BuildSuccinctBufferFromInput(&SuccinctSource{Bts:bts},
+	BuildSuccinctBufferFromInput(&SuccinctSource{Bts:bts},
 		&util.SuccinctConf{
 			SaSamplingRate: int32(32),
 			IsaSamplingRate: int32(32),
