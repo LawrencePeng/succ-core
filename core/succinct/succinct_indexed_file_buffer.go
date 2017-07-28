@@ -13,31 +13,38 @@ type SuccinctIndexedFileBuffer struct {
 }
 
 func BuildSuccinctIndexedFileBufferFromInput(source *string, offset []int32,
-	conf *util.SuccinctConf) *SuccinctIndexedFileBuffer {
-	succFBuf := BuildSuccinctFileBufferFromInput(*source, conf)
+	conf *util.SuccinctConf) (*SuccinctIndexedFileBuffer, error) {
+	succFBuf, err := BuildSuccinctFileBufferFromInput(*source, conf)
+	if err != nil {
+		return nil, err
+	}
+
 	return &SuccinctIndexedFileBuffer{
 		SuccFBuf: succFBuf,
 		Offsets:  offset,
-	}
+	}, nil
 }
 
-func (succIFB *SuccinctIndexedFileBuffer) WriteToFile(file *os.File) {
+func (succIFB *SuccinctIndexedFileBuffer) WriteToFile(file *os.File) error {
 	buf := new(bytes.Buffer)
 	succIFB.SuccFBuf.SuccBuf.WriteToBuf(buf)
 	util.WriteArray(buf, succIFB.Offsets)
-	buf.WriteTo(file)
+	_, err := buf.WriteTo(file)
+	return err
 }
 
-func ReadSuccinctIndexFileBufferFromFile(file *os.File) *SuccinctIndexedFileBuffer {
-	succFBuf, buf := ReadSuccinctFileBufferFromFile(file)
-	if succFBuf == nil || buf == nil {
-		return nil
+func ReadSuccinctIndexFileBufferFromFile(file *os.File) (*SuccinctIndexedFileBuffer, error) {
+	succFBuf, buf, err := ReadSuccinctFileBufferFromFile(file)
+	if err != nil {
+		return nil, err
 	}
+
 	offsets := util.ReadArray(buf)
+
 	return &SuccinctIndexedFileBuffer{
 		SuccFBuf: succFBuf,
 		Offsets:  offsets,
-	}
+	}, nil
 }
 
 func (succIFB *SuccinctIndexedFileBuffer) CompressedSize() int32 {
@@ -48,7 +55,7 @@ func (succIFB *SuccinctIndexedFileBuffer) RecordOffset(recordId int32) int32 {
 	return succIFB.Offsets[recordId]
 }
 
-func (succIFB *SuccinctIndexedFileBuffer) RecordBytes(recordId int32) []byte {
+func (succIFB *SuccinctIndexedFileBuffer) RecordBytes(recordId int32) ([]byte, error) {
 	if int(recordId) > len(succIFB.Offsets) || recordId < 0 {
 		panic("wrong recordid in RecordBytes")
 	}
@@ -65,7 +72,7 @@ func (succIFB *SuccinctIndexedFileBuffer) RecordBytes(recordId int32) []byte {
 	return succIFB.SuccFBuf.ExtractBytes(int64(begOffset), length)
 }
 
-func (succIFB *SuccinctIndexedFileBuffer) Record(recordId int32) string {
+func (succIFB *SuccinctIndexedFileBuffer) Record(recordId int32) (string, error) {
 	if int(recordId) > len(succIFB.Offsets) || recordId < 0 {
 		panic("wrong recordid in Record")
 	}
@@ -82,13 +89,13 @@ func (succIFB *SuccinctIndexedFileBuffer) Record(recordId int32) string {
 	return succIFB.SuccFBuf.Extract(int64(begOffset), length)
 }
 
-func (succIFB *SuccinctIndexedFileBuffer) ExtractRecord(recordId int32, offset, length int32) string {
+func (succIFB *SuccinctIndexedFileBuffer) ExtractRecord(recordId int32, offset, length int32) (string, error) {
 	if int(recordId) > len(succIFB.Offsets) || recordId < 0 {
 		panic("wrong recordid in ExtractRecord")
 	}
 
 	if length == 0 {
-		return ""
+		return "", nil
 	}
 
 	begOffset := succIFB.Offsets[recordId] + offset

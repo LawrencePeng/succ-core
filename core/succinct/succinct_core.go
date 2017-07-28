@@ -27,6 +27,10 @@ func (sc *SuccinctCore) FindCharacter(c int32) int32 {
 	bg := int32(1)
 	end := int32(len(sc.Alphabet)) - 1
 
+	if c < bg || c > end {
+		return -1
+	}
+
 	for ; bg <= end; {
 		mid := (bg + end) / 2
 		if sc.Alphabet[mid] == c {
