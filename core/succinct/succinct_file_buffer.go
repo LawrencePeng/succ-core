@@ -229,7 +229,7 @@ func (succFBuf *SuccinctFileBuffer) FwdSearchStr(str string) *util.Range {
 	})
 }
 
-func (succFBuf *SuccinctFileBuffer) ContinueBwdSearchStr(q string, ran *util.Range) *util.Range  {
+func (succFBuf *SuccinctFileBuffer) ContinueBwdSearchStr(q string, ran *util.Range) *util.Range {
 	return succFBuf.ContinueBwdSearch(q, ran)
 }
 
@@ -388,11 +388,9 @@ func (succFBuf *SuccinctFileBuffer) FwdSearchWithSource(source *SuccinctSource) 
 	}
 }
 
-
 func (succFBuf *SuccinctFileBuffer) ContinueFwdSearchWithQuery(q string, r *util.Range, offset int32) *util.Range {
-	return succFBuf.ContinueFwdSearchWithSource(&SuccinctSource{Bts:[]byte(q)}, r, offset)
+	return succFBuf.ContinueFwdSearchWithSource(&SuccinctSource{Bts: []byte(q)}, r, offset)
 }
-
 
 func (succFBuf *SuccinctFileBuffer) ContinueFwdSearchWithSource(source *SuccinctSource, r *util.Range, offset int32) *util.Range {
 	if source.Len() == 0 || r.Empty() {

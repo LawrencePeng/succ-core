@@ -4,8 +4,8 @@ import (
 	"./util"
 	"bytes"
 	"encoding/binary"
-	"os"
 	"github.com/juju/errors"
+	"os"
 )
 
 type SuccinctBuffer struct {
@@ -97,11 +97,11 @@ func BuildSuccinctBufferFromInput(input *SuccinctSource,
 		sampledISA = util.NewIntVector(numSampledElementsISA, sampleBitWidth)
 		for val := int32(0); val < originalSize; val++ {
 			idx := ISA[val]
-			if idx % samplingRateSA == 0 {
-				sampledSA.Add(idx / samplingRateSA, val)
+			if idx%samplingRateSA == 0 {
+				sampledSA.Add(idx/samplingRateSA, val)
 			}
-			if val % samplingRateISA == 0 {
-				sampledISA.Add(val / samplingRateISA, idx)
+			if val%samplingRateISA == 0 {
+				sampledISA.Add(val/samplingRateISA, idx)
 			}
 		}
 
@@ -116,15 +116,15 @@ func BuildSuccinctBufferFromInput(input *SuccinctSource,
 
 		NPA := make([]int32, originalSize)
 		for i := int32(1); i < originalSize; i++ {
-			NPA[ISA[i - 1]] = ISA[i]
+			NPA[ISA[i-1]] = ISA[i]
 		}
-		NPA[ISA[originalSize - 1]] = ISA[0]
+		NPA[ISA[originalSize-1]] = ISA[0]
 
 		for i := int32(0); i < alphabetSize; i++ {
 			startOffset := columnOffsets[i]
 			var endOffset int32
-			if i < alphabetSize - 1 {
-				endOffset = columnOffsets[i + 1]
+			if i < alphabetSize-1 {
+				endOffset = columnOffsets[i+1]
 			} else {
 				endOffset = originalSize
 			}
@@ -135,8 +135,6 @@ func BuildSuccinctBufferFromInput(input *SuccinctSource,
 			columnVector.WriteToBuf(buf)
 		}
 	}
-	
-	
 
 	return mapFromBuf(buf)
 }
@@ -216,19 +214,19 @@ func (succBuf *SuccinctBuffer) WriteToBuf(buf *bytes.Buffer) {
 	}
 }
 
-func (succBuf * SuccinctBuffer) CoreSize() int32 {
+func (succBuf *SuccinctBuffer) CoreSize() int32 {
 	coreSize := succBuf.Core.BaseSize()                                  // core size
 	coreSize += int32(len(succBuf.SA)) * int32(util.LONG_SIZE)           // sa size
 	coreSize += int32(len(succBuf.ISA)) * int32(util.LONG_SIZE)          // isa size
 	coreSize += int32(len(succBuf.ColumnOffsets)) * int32(util.INT_SIZE) // coloff size
-	for i := int32(0); i < int32(len(succBuf.Columns)); i++ { // col size
+	for i := int32(0); i < int32(len(succBuf.Columns)); i++ {            // col size
 		coreSize += int32(len(succBuf.Columns[i])) * int32(util.BYTE_SIZE)
 	}
 	return coreSize
 }
 
 func (succBuf *SuccinctBuffer) LookUpNPA(i int64) (int64, error) {
-	if i > int64(succBuf.Core.OriginalSize - 1) || i < 0 {
+	if i > int64(succBuf.Core.OriginalSize-1) || i < 0 {
 		return -1, errors.New("wrong range of i in LookUpNPA")
 	}
 
@@ -244,13 +242,13 @@ func (succBuf *SuccinctBuffer) LookUpNPA(i int64) (int64, error) {
 }
 
 func (succBuf *SuccinctBuffer) LookUpSA(i int64) (int64, error) {
-	if i > int64(succBuf.Core.OriginalSize - 1) || i < 0 {
+	if i > int64(succBuf.Core.OriginalSize-1) || i < 0 {
 		return -1, errors.New("wrong range of i in LookUpSA")
 	}
 
 	var err error = nil
 	j := int32(0)
-	for ; int32(i) % succBuf.Core.SamplingRateSA != 0;  {
+	for int32(i)%succBuf.Core.SamplingRateSA != 0 {
 		i, err = succBuf.LookUpNPA(i)
 		if err != nil {
 			return -1, err
@@ -258,7 +256,7 @@ func (succBuf *SuccinctBuffer) LookUpSA(i int64) (int64, error) {
 		j++
 	}
 
-	saVal := util.IntVecGet(succBuf.SA, int32(i) / succBuf.Core.SamplingRateSA, succBuf.Core.SampleBitWidth)
+	saVal := util.IntVecGet(succBuf.SA, int32(i)/succBuf.Core.SamplingRateSA, succBuf.Core.SampleBitWidth)
 	if saVal < j {
 		return int64(succBuf.Core.OriginalSize - (j - saVal)), nil
 	}
@@ -266,7 +264,7 @@ func (succBuf *SuccinctBuffer) LookUpSA(i int64) (int64, error) {
 }
 
 func (succBuf *SuccinctBuffer) LookUpISA(i int64) (int64, error) {
-	if i > int64(succBuf.Core.OriginalSize - 1) || i < 0 {
+	if i > int64(succBuf.Core.OriginalSize-1) || i < 0 {
 		return -1, errors.New("wrong range of i in LookUpSA")
 	}
 
@@ -276,7 +274,7 @@ func (succBuf *SuccinctBuffer) LookUpISA(i int64) (int64, error) {
 	sampleIdx := int32(i) / succBuf.Core.SamplingRateISA
 	pos := util.IntVecGet(succBuf.ISA, sampleIdx, succBuf.Core.SampleBitWidth)
 	i -= int64(sampleIdx * succBuf.Core.SamplingRateISA)
-	for ; i != 0; {
+	for i != 0 {
 		i--
 		neoPos, err = succBuf.LookUpNPA(int64(pos))
 		if err != nil {

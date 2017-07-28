@@ -11,7 +11,6 @@ type Succinct interface {
 	LookupIPA(int64) int64
 	LookupC(int64 int64) int32
 	BinSearchNPA(int64, int64, int64, bool) int64
-
 }
 
 type SuccinctCore struct {
@@ -31,7 +30,7 @@ func (sc *SuccinctCore) FindCharacter(c int32) int32 {
 		return -1
 	}
 
-	for ; bg <= end; {
+	for bg <= end {
 		mid := (bg + end) / 2
 		if sc.Alphabet[mid] == c {
 			return mid
@@ -46,6 +45,5 @@ func (sc *SuccinctCore) FindCharacter(c int32) int32 {
 }
 
 func (sc *SuccinctCore) BaseSize() int32 {
-	return 6 * int32(util.INT_SIZE) + (12 + int32(len(sc.Alphabet)*util.INT_SIZE))
+	return 6*int32(util.INT_SIZE) + (12 + int32(len(sc.Alphabet)*util.INT_SIZE))
 }
-
