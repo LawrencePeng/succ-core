@@ -30,7 +30,11 @@ func (succIFB *SuccinctIndexedFileBuffer) WriteToFile(file *os.File) error {
 	succIFB.SuccFBuf.SuccBuf.WriteToBuf(buf)
 	util.WriteArray(buf, succIFB.Offsets)
 	_, err := buf.WriteTo(file)
-	return err
+	if err != nil {
+		return err
+	}
+
+	return file.Sync()
 }
 
 func ReadSuccinctIndexFileBufferFromFile(file *os.File) (*SuccinctIndexedFileBuffer, error) {
@@ -48,7 +52,7 @@ func ReadSuccinctIndexFileBufferFromFile(file *os.File) (*SuccinctIndexedFileBuf
 }
 
 func (succIFB *SuccinctIndexedFileBuffer) CompressedSize() int32 {
-	return succIFB.SuccFBuf.CompressedSize() + int32(len(succIFB.Offsets)*util.INT_SIZE)
+	return succIFB.SuccFBuf.CompressedSize() + int32(len(succIFB.Offsets)*util.INT_SIZE) // add size of offsets
 }
 
 func (succIFB *SuccinctIndexedFileBuffer) RecordOffset(recordId int32) int32 {
@@ -110,6 +114,7 @@ func (succIFB *SuccinctIndexedFileBuffer) ExtractRecord(recordId int32, offset, 
 	return succIFB.SuccFBuf.Extract(int64(begOffset), length)
 }
 
+// bin search record id with pos.
 func (succIFB *SuccinctIndexedFileBuffer) OffsetToRecordId(pos int32) int32 {
 	sp := int32(0)
 	ep := int32(len(succIFB.Offsets) - 1)
@@ -137,6 +142,7 @@ func (succIFB *SuccinctIndexedFileBuffer) RecordSearchIds(q *SuccinctSource) []i
 	sp := r.From
 	ep := r.To
 
+	//
 	if ep-sp+1 <= 0 {
 		return []int32{}
 	}
